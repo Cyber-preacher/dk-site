@@ -7,21 +7,26 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Notes — Zettelkasten" };
 
 type NoteItem = ReturnType<typeof getAllNotes>[number];
-
 type SearchParams = {
   q?: string | string[];
   tag?: string | string[];
 };
 
-export default function NotesPage({ searchParams }: { searchParams?: SearchParams }) {
-  const qRaw = (searchParams?.q ?? "") as string | string[];
-  const tagRaw = (searchParams?.tag ?? "") as string | string[];
+export default async function NotesPage({
+  // Next 15: searchParams is async — must be awaited
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const qRaw = (sp.q ?? "") as string | string[];
+  const tagRaw = (sp.tag ?? "") as string | string[];
   const q = (Array.isArray(qRaw) ? qRaw[0] : qRaw).trim();
   const tag = (Array.isArray(tagRaw) ? tagRaw[0] : tagRaw).trim();
 
   const notes = getAllNotes();
 
-  // Build tag counts from all notes (explicitly typed)
+  // Tag counts
   const tagCounts = new Map<string, number>();
   for (const n of notes) {
     for (const t of n.tags || []) {
@@ -51,7 +56,9 @@ export default function NotesPage({ searchParams }: { searchParams?: SearchParam
   return (
     <div>
       <h1 className="text-3xl font-semibold">Notes</h1>
-      <p className="mt-2 text-sm text-zinc-400">Zettelkasten-style atomic ideas with backlinks.</p>
+      <p className="mt-2 text-sm text-zinc-400">
+        Zettelkasten-style atomic ideas with backlinks.
+      </p>
 
       {/* Search form (GET) */}
       <form method="get" action="/notes" className="mt-6 flex items-center gap-3">
