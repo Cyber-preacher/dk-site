@@ -10,25 +10,32 @@ export function generateStaticParams(): { tag: string }[] {
   const notes = getAllNotes();
   const set = new Set<string>();
   for (const n of notes) for (const t of n.tags ?? []) set.add(t);
-  // Next will handle encoding; no need to pre-encode here
   return Array.from(set).map((t) => ({ tag: t }));
 }
 
-export function generateMetadata({
+// Next 15: params is async here
+export async function generateMetadata({
   params,
 }: {
-  params: { tag: string };
-}): Metadata {
-  const tag = decodeURIComponent(params.tag);
+  params: Promise<{ tag: string }>;
+}): Promise<Metadata> {
+  const { tag } = await params;
+  const decoded = decodeURIComponent(tag);
   return {
-    title: `#${tag} — Notes`,
-    description: `Notes tagged with #${tag}`,
+    title: `#${decoded} — Notes`,
+    description: `Notes tagged with #${decoded}`,
   };
 }
 
-export default function TagPage({ params }: { params: { tag: string } }) {
-  const tag = decodeURIComponent(params.tag);
-  const tl = tag.toLowerCase();
+// Next 15: params is async here too
+export default async function TagPage({
+  params,
+}: {
+  params: Promise<{ tag: string }>;
+}) {
+  const { tag } = await params;
+  const decoded = decodeURIComponent(tag);
+  const tl = decoded.toLowerCase();
 
   const notes = getAllNotes().filter((n: NoteItem) =>
     (n.tags ?? []).some((t: string) => t.toLowerCase() === tl)
@@ -37,7 +44,7 @@ export default function TagPage({ params }: { params: { tag: string } }) {
   return (
     <div>
       <p className="text-xs font-mono tracking-widest text-zinc-400">TAG</p>
-      <h1 className="text-3xl font-semibold">#{tag}</h1>
+      <h1 className="text-3xl font-semibold">#{decoded}</h1>
       <p className="mt-2 text-sm text-zinc-400">
         {notes.length} note{notes.length === 1 ? "" : "s"}
       </p>
@@ -63,7 +70,7 @@ export default function TagPage({ params }: { params: { tag: string } }) {
 
       <div className="mt-8">
         <Link
-          href={{ pathname: "/notes", query: { tag } }}
+          href={{ pathname: "/notes", query: { tag: decoded } }}
           className="text-sm underline underline-offset-4 hover:no-underline"
         >
           View on /notes with the tag filter →
