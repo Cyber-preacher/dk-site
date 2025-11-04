@@ -7,8 +7,9 @@
       "DOM.Iterable"
     ],
     "jsx": "preserve",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "nodenext",
+    "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
     "strict": true,
     "noEmit": true,
     "resolveJsonModule": true,
@@ -16,9 +17,10 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"],
+      "@/components/*": ["components/*"],
+      "@/app/*": ["app/*"],
+      "@/lib/*": ["lib/*"]
     },
     "plugins": [
       {
@@ -33,7 +35,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules"

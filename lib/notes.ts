@@ -8,7 +8,7 @@ import slugify from "slugify";
 export interface Note {
   slug: string;
   title: string;
-  date?: string;
+  date?: string; // normalized to ISO "YYYY-MM-DD"
   tags?: string[];
   links?: string[]; // outgoing slugs
   content: string;
@@ -35,20 +35,36 @@ function extractWikiLinks(md: string): string[] {
   return out;
 }
 
+/** Normalize various front-matter date shapes into a compact ISO string (YYYY-MM-DD). */
+function normalizeDate(d: unknown): string | undefined {
+  if (!d) return undefined;
+  const asDate = new Date(d as any);
+  if (!Number.isNaN(asDate.getTime())) {
+    // return just the date part (no time)
+    return asDate.toISOString().slice(0, 10);
+  }
+  // Last resort if user put a non-parseable string: keep it as-is (won't break rendering).
+  if (typeof d === "string" && d.trim()) return d.trim();
+  return undefined;
+}
+
 export function getAllNotes(): Note[] {
   if (!fs.existsSync(NOTES_DIR)) return [];
-  const files = fs.readdirSync(NOTES_DIR).filter(f => f.endsWith(".md"));
-  const raw = files.map(file => {
+  const files = fs.readdirSync(NOTES_DIR).filter((f) => f.endsWith(".md"));
+
+  const raw: Note[] = files.map((file) => {
     const full = path.join(NOTES_DIR, file);
     const rawMd = fs.readFileSync(full, "utf-8");
     const { data, content } = matter(rawMd);
+
     const title = (data.title as string) || path.basename(file, ".md");
     const slug = (data.slug as string) || toSlug(title);
     const tags = (data.tags as string[] | undefined) ?? [];
-    const linksFromFrontmatter = (data.links as string[] | undefined) ?? [];
+
+    const linksFromFM = (data.links as string[] | undefined) ?? [];
     const linksFromBody = extractWikiLinks(content);
-    const links = [...new Set([...linksFromFrontmatter, ...linksFromBody])]
-      .map(l => toSlug(l));
+    const links = [...new Set([...linksFromFM, ...linksFromBody])];
+
     const rt = readingTime(content).text;
     const excerpt =
       (data.excerpt as string | undefined) ||
@@ -57,24 +73,25 @@ export function getAllNotes(): Note[] {
     return {
       slug,
       title,
-      date: data.date as string | undefined,
+      date: normalizeDate(data.date),
       tags,
       links,
       content,
       readingTime: rt,
       excerpt,
-    } as Note;
+    };
   });
 
-  // Map titles to slugs, normalize links
+  // Map titles to slugs to resolve [[Title]] to actual slug
   const titleToSlug: Record<string, string> = {};
   for (const n of raw) titleToSlug[n.title.toLowerCase()] = n.slug;
 
   for (const n of raw) {
-    n.links = (n.links || []).map(l => titleToSlug[l] || l);
+    n.links = (n.links || [])
+      .map((l) => titleToSlug[l.toLowerCase?.() ?? l] || toSlug(l));
   }
 
-  // Backlinks
+  // Build backlinks
   const backlinks: Record<string, { slug: string; title: string }[]> = {};
   for (const n of raw) {
     for (const target of n.links || []) {
@@ -83,11 +100,11 @@ export function getAllNotes(): Note[] {
   }
   for (const n of raw) n.backlinks = backlinks[n.slug] || [];
 
-  // Sort newest date first, then title
+  // Sort: newest date first (by numeric time), then title
+  const t = (d?: string) => (d ? new Date(d).getTime() : 0);
   raw.sort((a, b) => {
-    if (a.date && b.date) return b.date.localeCompare(a.date);
-    if (a.date) return -1;
-    if (b.date) return 1;
+    const dt = t(b.date) - t(a.date);
+    if (dt !== 0) return dt;
     return a.title.localeCompare(b.title);
   });
 
@@ -95,7 +112,7 @@ export function getAllNotes(): Note[] {
 }
 
 export function getNoteBySlug(slug: string): Note | null {
-  return getAllNotes().find(n => n.slug === slug) || null;
+  return getAllNotes().find((n) => n.slug === slug) || null;
 }
 
 export function getSlugMap(): Record<string, string> {
