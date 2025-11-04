@@ -22,3 +22,4 @@ dist
 coverage
 .env*
 .DS_Store
+.env.local
