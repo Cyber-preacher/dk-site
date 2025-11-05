@@ -114,3 +114,37 @@ body::after {
 .card {
   @apply rounded-2xl border border-white/10 bg-white/5 p-5 hover:shadow-[0_0_40px_rgba(34,211,238,0.35)] transition-shadow;
 }
+/* ====== Highlight.js (rehype-highlight) minimal skin ====== */
+.hljs {
+  background: transparent;
+  color: #e6faff;
+}
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-name {
+  color: var(--neon);
+  font-weight: 600;
+}
+.hljs-string, .hljs-attr, .hljs-template-tag, .hljs-template-variable {
+  color: #a7f3d0;
+}
+.hljs-title, .hljs-section { color: #f0abfc; }
+.hljs-built_in, .hljs-builtin-name { color: #7dd3fc; }
+.hljs-comment, .hljs-quote { color: rgba(148,163,184,.75); font-style: italic; }
+.hljs-number { color: #fdba74; }
+.hljs-meta { color: #93c5fd; }
+
+/* ====== Callouts ====== */
+.callout {
+  border: 1px solid var(--panel-brd);
+  border-left-width: 3px;
+  border-radius: 0.8rem;
+  padding: .9rem 1rem;
+  margin: 1rem 0;
+  background: linear-gradient(0deg, rgba(255,255,255,0.04), transparent);
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.03);
+}
+.callout-note    { border-left-color: var(--neon); }
+.callout-tip     { border-left-color: #34d399; }
+.callout-info    { border-left-color: #60a5fa; }
+.callout-warning { border-left-color: #fbbf24; }
+.callout-caution { border-left-color: #f87171; }
+.callout-quote   { border-left-color: #a78bfa; }
