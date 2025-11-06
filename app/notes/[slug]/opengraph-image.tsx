@@ -2,14 +2,14 @@
 import { ImageResponse } from "next/og";
 import { getNoteBySlug } from "@/lib/notes";
 
-// We use fs/reading-time under lib/notes, so force Node runtime
+// We use fs/reading-time inside lib/notes, so use Node runtime.
 export const runtime = "nodejs";
 
-// Next will use these automatically
+// Next auto-uses these for opengraph-image.* files
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// In Next 15, params is async in app dir — await it to avoid warnings.
+// In app dir on Next 15, params is async: await it to avoid warnings.
 export default async function OG({
   params,
 }: {
@@ -18,9 +18,9 @@ export default async function OG({
   const { slug } = await params;
 
   const note = getNoteBySlug(slug);
-  const title = note?.title ?? "Note not found";
-  const date = note?.date ?? "";
-  const tags = note?.tags ?? [];
+  const title: string = note?.title ?? "Note not found";
+  const date: string = note?.date ?? "";
+  const tags: string[] = note?.tags ?? [];
 
   return new ImageResponse(
     (
@@ -52,7 +52,7 @@ export default async function OG({
         </div>
         <div style={{ marginTop: 16, fontSize: 24, color: "rgba(255,255,255,0.75)" }}>
           {date}
-          {tags.length ? ` · ${tags.map((t) => `#${t}`).join(" ")}` : ""}
+          {tags.length ? ` · ${tags.map((t: string) => `#${t}`).join(" ")}` : ""}
         </div>
       </div>
     ),
