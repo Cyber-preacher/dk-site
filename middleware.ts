@@ -2,32 +2,53 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-// Only protect these paths
 export const config = {
   matcher: ["/admin/:path*", "/api/admin/:path*"],
 };
 
-export function middleware(req: NextRequest) {
-  const required = process.env.ADMIN_TOKEN;
-  // Fail-open if ADMIN_TOKEN isn’t configured, so we don’t 500 on Vercel
-  if (!required) return NextResponse.next();
-
-  const token =
-    req.headers.get("x-admin-token") ??
-    req.cookies.get("admin_token")?.value ??
-    "";
-
-  if (token === required) return NextResponse.next();
-
-  // If it’s an API route, respond with JSON 401 (don’t throw)
-  if (req.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+function readBasicAuth(req: NextRequest) {
+  const header = req.headers.get("authorization");
+  if (header?.startsWith("Basic ")) {
+    const base64 = header.slice(6).trim();
+    try {
+      return Buffer.from(base64, "base64").toString();
+    } catch {
+      return "";
+    }
   }
 
-  // Otherwise redirect nicely with a hint
-  const url = new URL("/", req.url);
-  url.searchParams.set("e", "401");
+  const cookie = req.cookies.get("admin_basic")?.value;
+  if (!cookie) return "";
+
+  try {
+    return Buffer.from(cookie, "base64").toString();
+  } catch {
+    return "";
+  }
+}
+
+export function middleware(req: NextRequest) {
+  const user = process.env.ADMIN_USER;
+  const pass = process.env.ADMIN_PASS;
+
+  if (!user || !pass) {
+    return NextResponse.next();
+  }
+
+  const credentials = readBasicAuth(req);
+  const expected = `${user}:${pass}`;
+
+  if (credentials === expected) {
+    return NextResponse.next();
+  }
+
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "WWW-Authenticate": 'Basic realm="Admin"' } });
+  }
+
+  const url = new URL("/admin", req.url);
+  url.searchParams.set("auth", "required");
   const res = NextResponse.redirect(url);
-  res.headers.set('WWW-Authenticate', 'Bearer realm="admin"');
+  res.headers.set("WWW-Authenticate", 'Basic realm="Admin"');
   return res;
 }

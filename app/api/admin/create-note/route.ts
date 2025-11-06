@@ -1,3 +1,4 @@
+// app/api/admin/create-note/route.ts
 import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -20,26 +21,52 @@ class HttpError extends Error {
 
   constructor(message: string, status: number) {
     super(message);
-    this.name = "HttpError";
     this.status = status;
+    this.name = "HttpError";
   }
 }
 
-function readAdminToken(req: Request) {
-  const headerToken = req.headers.get("x-admin-token")?.trim();
-  if (headerToken) return headerToken;
+function parseBasicAuth(request: Request) {
+  const header = request.headers.get("authorization");
+  if (header?.startsWith("Basic ")) {
+    const base64 = header.slice(6).trim();
+    try {
+      return Buffer.from(base64, "base64").toString();
+    } catch {
+      return "";
+    }
+  }
 
-  const cookieHeader = req.headers.get("cookie");
-  if (!cookieHeader) return "";
-
-  for (const cookie of cookieHeader.split(";")) {
-    const [name, ...rest] = cookie.trim().split("=");
-    if (name === "admin_token") {
-      return decodeURIComponent(rest.join("=") ?? "");
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  for (const part of cookieHeader.split(";")) {
+    const [key, ...rest] = part.trim().split("=");
+    if (key === "admin_basic") {
+      const value = rest.join("=") ?? "";
+      try {
+        return Buffer.from(decodeURIComponent(value), "base64").toString();
+      } catch {
+        return "";
+      }
     }
   }
 
   return "";
+}
+
+function assertAuthorized(request: Request) {
+  const user = process.env.ADMIN_USER;
+  const pass = process.env.ADMIN_PASS;
+
+  if (!user || !pass) {
+    return;
+  }
+
+  const expected = `${user}:${pass}`;
+  const provided = parseBasicAuth(request);
+
+  if (provided !== expected) {
+    throw new HttpError("Unauthorized", 401);
+  }
 }
 
 function ymd(d: Date) {
@@ -59,34 +86,32 @@ function normalizeDate(raw?: string) {
   return ymd(parsed);
 }
 
-function normalizeTags(value: unknown): string[] {
-  if (!value) return [];
+function normalizeTags(input: unknown): string[] {
+  if (!input) return [];
 
   const tags: string[] = [];
-
-  const push = (entry: unknown) => {
-    if (typeof entry !== "string") return;
-    for (const piece of entry.split(",")) {
-      const tag = piece.trim();
-      if (tag) tags.push(tag);
+  const push = (value: unknown) => {
+    if (typeof value !== "string") return;
+    for (const piece of value.split(",")) {
+      const tagged = piece.trim();
+      if (tagged) tags.push(tagged);
     }
   };
 
-  if (Array.isArray(value)) {
-    for (const entry of value) push(entry);
-    return tags;
+  if (Array.isArray(input)) {
+    for (const value of input) push(value);
+  } else {
+    push(input);
   }
 
-  push(value);
   return tags;
 }
 
-function pickBody(data: Record<string, unknown>) {
-  const candidates = ["body", "content", "markdown"];
-  for (const key of candidates) {
-    const raw = data[key];
-    if (typeof raw === "string" && raw.trim()) {
-      return raw.trim();
+function pickBody(record: Record<string, unknown>) {
+  for (const key of ["body", "content", "markdown"]) {
+    const candidate = record[key];
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
     }
   }
   return "";
@@ -97,17 +122,16 @@ function normalizeRecord(raw: unknown): NormalizedPayload {
     throw new HttpError("payload must be an object", 400);
   }
 
-  const data = raw as Record<string, unknown>;
-  const title =
-    typeof data.title === "string" ? data.title.trim() : "";
+  const record = raw as Record<string, unknown>;
+  const title = typeof record.title === "string" ? record.title.trim() : "";
 
   if (!title) {
     throw new HttpError("title is required", 400);
   }
 
   const slugSource =
-    typeof data.slug === "string" && data.slug.trim()
-      ? data.slug.trim()
+    typeof record.slug === "string" && record.slug.trim()
+      ? record.slug.trim()
       : title;
 
   const slug = slugify(slugSource, { lower: true, strict: true });
@@ -115,37 +139,29 @@ function normalizeRecord(raw: unknown): NormalizedPayload {
     throw new HttpError("slug could not be derived from title/slug", 400);
   }
 
-  const dateValue =
-    typeof data.date === "string" ? data.date.trim() : undefined;
+  const date = typeof record.date === "string" ? record.date.trim() : undefined;
 
   return {
     title,
     slug,
-    body: pickBody(data),
-    tags: normalizeTags(data.tags),
-    date: normalizeDate(dateValue),
+    body: pickBody(record),
+    tags: normalizeTags(record.tags),
+    date: normalizeDate(date),
   };
 }
 
 function formDataToRecord(form: FormData) {
-  const out: Record<string, unknown> = {};
-
+  const record: Record<string, unknown> = {};
   for (const [key, value] of form.entries()) {
     if (value instanceof File) continue;
-
-    if (Object.prototype.hasOwnProperty.call(out, key)) {
-      const existing = out[key];
-      if (Array.isArray(existing)) {
-        out[key] = [...existing, value];
-      } else {
-        out[key] = [existing, value];
-      }
+    if (key in record) {
+      const current = record[key];
+      record[key] = Array.isArray(current) ? [...current, value] : [current, value];
     } else {
-      out[key] = value;
+      record[key] = value;
     }
   }
-
-  return out;
+  return record;
 }
 
 async function readPayload(req: Request) {
@@ -184,12 +200,11 @@ async function readPayload(req: Request) {
   throw new HttpError("Unsupported content type", 415);
 }
 
-function buildMarkdownFile(payload: NormalizedPayload) {
+function buildMarkdown(payload: NormalizedPayload) {
   const tagsLine = payload.tags
     .map((tag) => `"${escapeYaml(tag)}"`)
     .join(", ");
-
-  const frontMatter = [
+  const header = [
     "---",
     `title: "${escapeYaml(payload.title)}"`,
     `slug: "${payload.slug}"`,
@@ -200,21 +215,18 @@ function buildMarkdownFile(payload: NormalizedPayload) {
   ].join("\n");
 
   const body = payload.body ? `${payload.body}\n` : "";
-
-  return `${frontMatter}${body}`;
+  return `${header}${body}`;
 }
 
 async function writeNote(payload: NormalizedPayload) {
   await fs.mkdir(NOTES_DIR, { recursive: true });
-
   const filePath = path.join(NOTES_DIR, `${payload.slug}.md`);
-  const markdown = buildMarkdownFile(payload);
 
   try {
-    await fs.writeFile(filePath, markdown, { flag: "wx" });
+    await fs.writeFile(filePath, buildMarkdown(payload), { flag: "wx" });
   } catch (error) {
     const err = error as NodeJS.ErrnoException;
-    if (err && err.code === "EEXIST") {
+    if (err.code === "EEXIST") {
       throw new HttpError("a note with that slug already exists", 409);
     }
     throw error;
@@ -225,15 +237,7 @@ async function writeNote(payload: NormalizedPayload) {
 
 export async function POST(req: Request) {
   try {
-    const required = process.env.ADMIN_TOKEN;
-
-    if (required) {
-      const token = readAdminToken(req);
-      if (token !== required) {
-        throw new HttpError("Unauthorized", 401);
-      }
-    }
-
+    assertAuthorized(req);
     const payload = await readPayload(req);
     const filePath = await writeNote(payload);
 

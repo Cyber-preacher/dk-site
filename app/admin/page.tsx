@@ -1,5 +1,6 @@
+// app/admin/page.tsx
 import type { Metadata } from "next";
-import AdminTokenForm from "@/components/AdminTokenForm";
+import AdminCredentialsForm from "@/components/AdminCredentialsForm";
 
 export const metadata: Metadata = {
   title: "Admin — New Note",
@@ -12,14 +13,15 @@ export default function AdminPage() {
       <section>
         <h1 className="text-2xl font-semibold mb-3">Admin: Create Note</h1>
         <p className="text-sm text-zinc-400">
-          Authoring routes are protected by <code>ADMIN_TOKEN</code>.
-          Store your token below (writes a local <code>admin_token</code> cookie),
-          then post the form to <code className="px-1 py-0.5 rounded bg-white/10">/api/admin/create-note</code>.
+          Authoring routes use Basic Auth with <code>ADMIN_USER</code> /{" "}
+          <code>ADMIN_PASS</code>. Save your credentials below (stored as a local cookie),
+          then submit the form to{" "}
+          <code className="px-1 py-0.5 rounded bg-white/10">/api/admin/create-note</code>.
         </p>
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-6">
-        <AdminTokenForm />
+        <AdminCredentialsForm />
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
