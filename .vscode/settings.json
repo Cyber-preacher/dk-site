@@ -5,9 +5,10 @@
   },
   "typescript.tsdk": ".yarn/sdks/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
-
   "css.validate": false,
-  "editor.quickSuggestions": { "strings": true },
+  "editor.quickSuggestions": {
+    "strings": true
+  },
   "tailwindCSS.includeLanguages": {
     "plaintext": "html"
   },
