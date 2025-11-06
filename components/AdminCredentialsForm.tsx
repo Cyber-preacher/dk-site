@@ -10,6 +10,22 @@ type Status =
   | { state: "unset" }
   | { state: "set"; user: string };
 
+function safeAtob(value: string) {
+  try {
+    return atob(value);
+  } catch {
+    return "";
+  }
+}
+
+function safeBtoa(value: string) {
+  try {
+    return btoa(value);
+  } catch {
+    return "";
+  }
+}
+
 function readStoredUser(): Status {
   if (typeof document === "undefined") return { state: "unknown" };
 
@@ -21,17 +37,21 @@ function readStoredUser(): Status {
   if (!entry) return { state: "unset" };
 
   const raw = entry.slice(COOKIE_NAME.length + 1);
-  try {
-    const decoded = Buffer.from(decodeURIComponent(raw), "base64").toString();
-    const [user] = decoded.split(":");
-    if (user) {
-      return { state: "set", user };
+  const decodedCookie = (() => {
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
     }
-  } catch {
-    // fall-through
-  }
+  })();
 
-  return { state: "unset" };
+  const decoded = safeAtob(decodedCookie);
+  if (!decoded) return { state: "unset" };
+
+  const [user] = decoded.split(":");
+  if (!user) return { state: "unset" };
+
+  return { state: "set", user };
 }
 
 export default function AdminCredentialsForm() {
@@ -50,7 +70,9 @@ export default function AdminCredentialsForm() {
 
     if (!user || !pass) return;
 
-    const encoded = Buffer.from(`${user}:${pass}`).toString("base64");
+    const encoded = safeBtoa(`${user}:${pass}`);
+    if (!encoded) return;
+
     document.cookie = `${COOKIE_NAME}=${encodeURIComponent(
       encoded
     )}; path=/; max-age=${ONE_WEEK_SECONDS}; sameSite=Strict`;

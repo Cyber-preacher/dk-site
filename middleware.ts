@@ -6,25 +6,43 @@ export const config = {
   matcher: ["/admin/:path*", "/api/admin/:path*"],
 };
 
-function readBasicAuth(req: NextRequest) {
-  const header = req.headers.get("authorization");
-  if (header?.startsWith("Basic ")) {
-    const base64 = header.slice(6).trim();
+function decodeBase64(input: string) {
+  try {
+    if (typeof atob === "function") return atob(input);
+  } catch {
+    // fall through to Node fallback
+  }
+
+  if (typeof Buffer !== "undefined") {
     try {
-      return Buffer.from(base64, "base64").toString();
+      return Buffer.from(input, "base64").toString();
     } catch {
       return "";
     }
   }
 
-  const cookie = req.cookies.get("admin_basic")?.value;
-  if (!cookie) return "";
+  return "";
+}
 
-  try {
-    return Buffer.from(cookie, "base64").toString();
-  } catch {
-    return "";
+function readBasicAuth(req: NextRequest) {
+  const header = req.headers.get("authorization");
+  if (header?.startsWith("Basic ")) {
+    const base64 = header.slice(6).trim();
+    return decodeBase64(base64);
   }
+
+  const rawCookie = req.cookies.get("admin_basic")?.value;
+  if (!rawCookie) return "";
+
+  const decodedCookie = (() => {
+    try {
+      return decodeURIComponent(rawCookie);
+    } catch {
+      return rawCookie;
+    }
+  })();
+
+  return decodeBase64(decodedCookie);
 }
 
 export function middleware(req: NextRequest) {
@@ -44,24 +62,15 @@ export function middleware(req: NextRequest) {
 
   const pathname = req.nextUrl.pathname;
 
-  // Let the admin UI render so you can enter creds locally.
   if (pathname === "/admin" && req.method === "GET") {
     return NextResponse.next();
   }
 
   if (pathname.startsWith("/api/")) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      {
-        status: 401,
-        headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
-      }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const url = new URL("/admin", req.url);
   url.searchParams.set("auth", "required");
-  const res = NextResponse.redirect(url);
-  res.headers.set("WWW-Authenticate", 'Basic realm="Admin"');
-  return res;
+  return NextResponse.redirect(url);
 }
