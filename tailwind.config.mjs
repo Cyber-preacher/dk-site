@@ -8,8 +8,6 @@ export default {
     "./content/notes/**/*.md"
   ],
   darkMode: "class",
-  theme: {
-    extend: {}
-  },
+  theme: { extend: {} },
   plugins: [typography]
 };

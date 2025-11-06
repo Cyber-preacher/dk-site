@@ -1,87 +1,100 @@
+// app/notes/[slug]/page.tsx
+import type { Metadata, Route } from "next";
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
-import Markdown from "@/components/Markdown";
+import Link from "next/link";
 import { getAllNotes, getNoteBySlug, getSlugMap } from "@/lib/notes";
-import { getSiteUrl } from "@/lib/site";
+import Markdown from "@/components/Markdown";
 
-// Derive types from data helpers
 type NoteItem = ReturnType<typeof getAllNotes>[number];
-type BacklinkItem = NonNullable<NoteItem["backlinks"]>[number];
 
 export function generateStaticParams(): { slug: string }[] {
   return getAllNotes().map((n: NoteItem) => ({ slug: n.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const note = getNoteBySlug(params.slug);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const note = getNoteBySlug(slug);
   if (!note) return { title: "Note not found" };
 
-  const site = getSiteUrl();
-  const url = `${site}/notes/${note.slug}`;
-  const og = `${site}/og/${note.slug}`;
-
   return {
-    title: note.title,
-    description: note.excerpt || undefined,
-    alternates: { canonical: url },
+    title: `${note.title} — Notes`,
+    description: note.excerpt ?? undefined,
+    alternates: { canonical: `/notes/${note.slug}` },
     openGraph: {
       title: note.title,
-      description: note.excerpt || undefined,
-      url,
+      description: note.excerpt ?? undefined,
       type: "article",
-      images: [{ url: og, width: 1200, height: 630 }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: note.title,
-      description: note.excerpt || undefined,
-      images: [og],
+      url: `/notes/${note.slug}`,
     },
   };
 }
 
-export default function NotePage({ params }: { params: { slug: string } }) {
-  const note = getNoteBySlug(params.slug);
+export default async function NotePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const note = getNoteBySlug(slug);
   if (!note) return notFound();
 
   const slugMap = getSlugMap();
 
   return (
-    <article className="prose prose-invert max-w-none">
+    <article className="prose prose-invert">
       <p className="text-xs font-mono tracking-widest text-zinc-400">NOTE</p>
-      <h1>{note.title}</h1>
-      <p className="!mt-0 text-sm text-zinc-400">
-        {note.date ?? null}
-        {note.readingTime ? ` • ${note.readingTime}` : ""}
-      </p>
+      <h1 className="text-3xl font-semibold">{note.title}</h1>
+      {note.date && (
+        <p className="mt-1 text-xs text-zinc-400">
+          {note.date}
+          {note.readingTime ? ` · ${note.readingTime}` : ""}
+        </p>
+      )}
 
-      <Markdown source={note.content} slugMap={slugMap} />
+      <div className="mt-6">
+        <Markdown source={note.content} slugMap={slugMap} />
+      </div>
 
-      {note.tags && note.tags.length > 0 && (
+      {Array.isArray(note.tags) && note.tags.length > 0 && (
         <p className="mt-6 text-sm">
           {note.tags.map((t: string) => (
-            <span
+            <Link
               key={t}
-              className="mr-2 text-[11px] font-mono tracking-widest px-2 py-1 rounded border border-white/10"
+              href={{ pathname: "/notes", query: { tag: t } }}
+              className="link-underline mr-2"
             >
               #{t}
-            </span>
+            </Link>
           ))}
         </p>
       )}
 
-      {note.backlinks && note.backlinks.length > 0 && (
-        <div className="mt-10">
-          <h3>Backlinks</h3>
-          <ul className="list-disc pl-5">
-            {note.backlinks.map((b: BacklinkItem) => (
-              <li key={b.slug}>
-                <a href={`/notes/${b.slug}`}>{b.title}</a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {Array.isArray((note as any).backlinks) &&
+        (note as any).backlinks.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold">Mentioned in…</h2>
+            <ul className="mt-2 space-y-1">
+              {(note as any).backlinks.map(
+                (b: { slug: string; title: string }) => (
+                  <li key={b.slug}>
+                    <Link
+                      href={
+                        (`/notes/${b.slug}`) as Route // typedRoutes-safe
+                      }
+                      className="link-underline"
+                    >
+                      {b.title}
+                    </Link>
+                  </li>
+                )
+              )}
+            </ul>
+          </div>
+        )}
     </article>
   );
 }
