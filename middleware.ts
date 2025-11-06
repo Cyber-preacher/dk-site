@@ -42,8 +42,21 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (req.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "WWW-Authenticate": 'Basic realm="Admin"' } });
+  const pathname = req.nextUrl.pathname;
+
+  // Let the admin UI render so you can enter creds locally.
+  if (pathname === "/admin" && req.method === "GET") {
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      {
+        status: 401,
+        headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
+      }
+    );
   }
 
   const url = new URL("/admin", req.url);
