@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "preserve",
-    "module": "nodenext",
-    "moduleResolution": "NodeNext",
-    "allowSyntheticDefaultImports": true,
+
+    // ✅ Critical for resolving `next/*` types & ESM-style imports in App Router
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+
+    "allowJs": true,
+    "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "resolveJsonModule": true,
@@ -22,14 +22,11 @@
       "@/app/*": ["app/*"],
       "@/lib/*": ["lib/*"]
     },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "incremental": true
+    "plugins": [{ "name": "next" }],
+    "incremental": true,
+
+    // Optional: keep types lean. DO NOT add "next/image-types" here.
+    "types": ["node", "next"]
   },
   "include": [
     "next-env.d.ts",
@@ -38,7 +35,5 @@
     ".next/types/**/*.ts",
     "types/**/*.d.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

@@ -1,28 +1,25 @@
-import { getAllNotes } from "@/lib/notes";
-
-export const dynamic = "force-static";
-
-// derive the note item type
-type NoteItem = ReturnType<typeof getAllNotes>[number];
+// app/sitemap/route.ts
+import { getAllNotes, type Note } from "@/lib/notes";
 
 export async function GET() {
-  const site = process.env.SITE_URL || "http://localhost:3000";
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://example.com";
 
-  const staticUrls = [
+  const notes = getAllNotes();
+
+  const urls: Array<{ loc: string; priority: number; lastmod?: string }> = [
     { loc: `${site}/`, priority: 1.0 },
-    { loc: `${site}/notes`, priority: 0.8 },
-    { loc: `${site}/about`, priority: 0.5 },
+    { loc: `${site}/about`, priority: 0.8 },
+    { loc: `${site}/notes`, priority: 0.9 },
+    ...notes.map((n: Note) => ({
+      loc: `${site}/notes/${n.slug}`,
+      priority: 0.9,
+      lastmod: n.date || undefined,
+    })),
   ];
-
-  const noteUrls = getAllNotes().map((n: NoteItem) => ({
-    loc: `${site}/notes/${n.slug}`,
-    priority: 0.6,
-    lastmod: n.date ? new Date(n.date).toISOString() : undefined,
-  }));
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${[...staticUrls, ...noteUrls]
+${urls
   .map(
     (u) => `
   <url>
@@ -34,5 +31,8 @@ ${[...staticUrls, ...noteUrls]
   .join("\n")}
 </urlset>`;
 
-  return new Response(xml, { headers: { "Content-Type": "application/xml; charset=utf-8" } });
+  return new Response(xml, {
+    status: 200,
+    headers: { "Content-Type": "application/xml; charset=utf-8" },
+  });
 }
