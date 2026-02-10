@@ -1,0 +1,21 @@
+{
+	# Set via docker-compose environment. Email is optional but recommended.
+	email {$EMAIL}
+}
+
+{$DOMAIN}, www.{$DOMAIN} {
+	@www host www.{$DOMAIN}
+	redir @www https://{$DOMAIN}{uri} permanent
+
+	encode zstd gzip
+
+	header {
+		# Enable HSTS once you're confident the domain is correct and stable.
+		# Strict-Transport-Security "max-age=15552000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	reverse_proxy app:3000
+}

@@ -60,9 +60,6 @@ export default function HomePage() {
           <div>
             <h2 className="text-3xl leading-none">Interests</h2>
             <p className="mt-3 text-sm sm:text-base">
-              Sports: fitness, MMA, archery, historical fencing.
-            </p>
-            <p className="mt-2 text-sm sm:text-base">
               What I study: cybernetics, computer sciences, neurosciences,
               robotics, astronomy, physics, philosophy, and adjacent systems
               disciplines.
@@ -72,15 +69,14 @@ export default function HomePage() {
               scripts), painting, and music. I play multiple styles of guitar,
               piano, some drums, and completed formal vocal training.
             </p>
+            <p className="mt-2 text-sm sm:text-base">
+              Sports: fitness, MMA, archery, historical fencing.
+            </p>
           </div>
 
           <div>
             <h2 className="text-3xl leading-none">Favorites</h2>
             <p className="mt-3 text-sm sm:text-base">
-              Games: Paradox Interactive grand-strategy titles; Dark Souls III;
-              Elden Ring.
-            </p>
-            <p className="mt-2 text-sm sm:text-base">
               Authors: Fyodor Dostoyevsky, Ernest Hemingway, George R. R.
               Martin, Mikhail Lermontov, William Shakespeare, Gabriel Garcia
               Marquez, Alexandre Dumas, Marcus Aurelius, Charles Dickens.
@@ -94,6 +90,10 @@ export default function HomePage() {
               Music: Linkin Park, SOAD, Evanesence, Nightwish, Bring Me The
               Horizon, Woodkid, Disturbed, Adele, David Kushner and so much
               more.
+            </p>
+            <p className="mt-2 text-sm sm:text-base">
+              Games: Paradox Interactive grand-strategy titles; Dark Souls III;
+              Elden Ring.
             </p>
           </div>
         </div>
