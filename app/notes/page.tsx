@@ -4,7 +4,7 @@ import NoteCard from "@/components/NoteCard";
 import { getAllNoteSummaries, isLongForm } from "@/lib/notes";
 import type { Metadata, Route } from "next";
 
-export const metadata: Metadata = { title: "Notes — Zettelkasten" };
+export const metadata: Metadata = { title: "Notes — Public Library" };
 
 const PAGE_SIZE = 20;
 

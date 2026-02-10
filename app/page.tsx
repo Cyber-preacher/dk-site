@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: site },
   openGraph: {
     title: "Dato — Notes & Work",
-    description: "Cyber–biz personal site with Zettelkasten notes.",
+    description: "Public library of thoughts.",
     url: site,
     siteName: "Dato Kavazi",
     images: [{ url: `${site}/og`, width: 1200, height: 630 }],
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Dato — Notes & Work",
-    description: "Cyber–biz personal site with Zettelkasten notes.",
+    description: "Public library of thoughts.",
     images: [`${site}/og`],
   },
 };

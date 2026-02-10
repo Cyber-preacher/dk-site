@@ -26,13 +26,13 @@ export async function GET() {
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
-<channel>
-  <title>Dato — Notes</title>
-  <link>${site}</link>
-  <description>Zettelkasten notes</description>
-  ${items}
-</channel>
-</rss>`;
+  <channel>
+    <title>Dato — Notes</title>
+    <link>${site}</link>
+    <description>Public library of thoughts</description>
+    ${items}
+  </channel>
+  </rss>`;
 
   // Use the Web Response — no need to import from "next/server"
   return new Response(xml, {

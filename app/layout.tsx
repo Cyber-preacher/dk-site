@@ -20,7 +20,7 @@ const displayFont = Teko({
 
 export const metadata: Metadata = {
   title: "Dato Kavazi — Notes & Work",
-  description: "Cyber–biz personal site with Zettelkasten notes.",
+  description: "Public library of thoughts.",
   metadataBase: new URL(getSiteUrl()),
 };
 
