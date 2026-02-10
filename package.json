@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "validate:notes": "node scripts/validate-notes.mjs",
+    "note:new": "node scripts/new-note.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

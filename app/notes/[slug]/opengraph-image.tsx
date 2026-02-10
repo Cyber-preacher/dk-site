@@ -1,6 +1,6 @@
 // app/notes/[slug]/opengraph-image.tsx
 import { ImageResponse } from "next/og";
-import { getNoteBySlug, isLongForm } from "@/lib/notes";
+import { getNoteSummaryBySlug, isLongForm } from "@/lib/notes";
 
 // We use fs/reading-time inside lib/notes, so use Node runtime.
 export const runtime = "nodejs";
@@ -17,7 +17,7 @@ export default async function OG({
 }) {
   const { slug } = await params;
 
-  const note = getNoteBySlug(slug);
+  const note = getNoteSummaryBySlug(slug);
   if (!note || !isLongForm(note)) {
     return new Response("Not found", { status: 404 });
   }

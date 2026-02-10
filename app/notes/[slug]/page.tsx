@@ -3,19 +3,16 @@ import type { Metadata, Route } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
-  getAllNotes,
+  getLongFormNoteSummaries,
   getNoteBySlug,
+  getNoteSummaryBySlug,
   getSlugMap,
   isLongForm,
 } from "@/lib/notes";
 import Markdown from "@/components/Markdown";
 
-type NoteItem = ReturnType<typeof getAllNotes>[number];
-
 export function generateStaticParams(): { slug: string }[] {
-  return getAllNotes()
-    .filter((n: NoteItem) => isLongForm(n))
-    .map((n: NoteItem) => ({ slug: n.slug }));
+  return getLongFormNoteSummaries().map((n) => ({ slug: n.slug }));
 }
 
 export async function generateMetadata({
@@ -52,7 +49,7 @@ export default async function NotePage({
   const slugMap = getSlugMap();
   const backlinks = (note.backlinks || []).filter(
     (b: { slug: string; title: string }) => {
-      const source = getNoteBySlug(b.slug);
+      const source = getNoteSummaryBySlug(b.slug);
       return !!source && isLongForm(source);
     },
   );

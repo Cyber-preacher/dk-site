@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getNoteBySlug, isLongForm } from "@/lib/notes";
+import { getNoteSummaryBySlug, isLongForm } from "@/lib/notes";
 
 export const runtime = "nodejs";
 
@@ -8,7 +8,7 @@ export async function GET(
   context: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await context.params;
-  const note = getNoteBySlug(slug);
+  const note = getNoteSummaryBySlug(slug);
   if (!note || !isLongForm(note))
     return new Response("Not found", { status: 404 });
 

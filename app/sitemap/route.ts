@@ -1,16 +1,16 @@
 // app/sitemap/route.ts
-import { getAllNotes, isLongForm, type Note } from "@/lib/notes";
+import { getLongFormNoteSummaries, type NoteSummary } from "@/lib/notes";
 import { getSiteUrl } from "@/lib/site";
 
 export async function GET() {
   const site = getSiteUrl();
 
-  const notes = getAllNotes().filter((n: Note) => isLongForm(n));
+  const notes = getLongFormNoteSummaries();
 
   const urls: Array<{ loc: string; priority: number; lastmod?: string }> = [
     { loc: `${site}/`, priority: 1.0 },
     { loc: `${site}/notes`, priority: 0.9 },
-    ...notes.map((n: Note) => ({
+    ...notes.map((n: NoteSummary) => ({
       loc: `${site}/notes/${n.slug}`,
       priority: 0.9,
       lastmod: n.date || undefined,

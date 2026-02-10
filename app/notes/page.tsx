@@ -1,15 +1,18 @@
 // app/notes/page.tsx
 import Link from "next/link";
 import NoteCard from "@/components/NoteCard";
-import { getAllNotes, isLongForm } from "@/lib/notes";
+import { getAllNoteSummaries, isLongForm } from "@/lib/notes";
 import type { Metadata, Route } from "next";
 
 export const metadata: Metadata = { title: "Notes — Zettelkasten" };
 
-type NoteItem = ReturnType<typeof getAllNotes>[number];
+const PAGE_SIZE = 20;
+
+type NoteItem = ReturnType<typeof getAllNoteSummaries>[number];
 type SearchParams = {
   q?: string | string[];
   tag?: string | string[];
+  page?: string | string[];
 };
 
 function toTagList(raw: string | string[] | undefined): string[] {
@@ -26,10 +29,11 @@ function toTagList(raw: string | string[] | undefined): string[] {
   return [...new Set(out)];
 }
 
-function buildNotesHref(q: string, tags: string[]): string {
+function buildNotesHref(q: string, tags: string[], page = 1): string {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   for (const tag of tags) params.append("tag", tag);
+  if (page > 1) params.set("page", String(page));
   const qs = params.toString();
   return qs ? `/notes?${qs}` : "/notes";
 }
@@ -43,11 +47,16 @@ export default async function NotesPage({
   const sp = (await searchParams) ?? {};
   const qRaw = (sp.q ?? "") as string | string[];
   const tagRaw = sp.tag as string | string[] | undefined;
+  const pageRaw = (sp.page ?? "1") as string | string[];
   const q = (Array.isArray(qRaw) ? qRaw[0] : qRaw).trim();
+  const currentPage = Math.max(
+    1,
+    Number.parseInt(Array.isArray(pageRaw) ? pageRaw[0] : pageRaw, 10) || 1,
+  );
   const selectedTags = toTagList(tagRaw);
   const selectedTagsLower = selectedTags.map((t) => t.toLowerCase());
 
-  const notes = getAllNotes();
+  const notes = getAllNoteSummaries();
 
   // Tag counts
   const tagCounts = new Map<string, number>();
@@ -67,7 +76,7 @@ export default async function NotesPage({
       !ql ||
       n.title.toLowerCase().includes(ql) ||
       (n.excerpt?.toLowerCase().includes(ql) ?? false) ||
-      n.content.toLowerCase().includes(ql);
+      n.searchText.includes(ql);
 
     const matchesTag =
       selectedTagsLower.length === 0 ||
@@ -77,8 +86,14 @@ export default async function NotesPage({
 
     return matchesQ && matchesTag;
   });
-  const longPosts = filtered.filter((n: NoteItem) => isLongForm(n));
-  const shortNotes = filtered.filter((n: NoteItem) => !isLongForm(n));
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const page = Math.min(currentPage, totalPages);
+  const start = (page - 1) * PAGE_SIZE;
+  const paged = filtered.slice(start, start + PAGE_SIZE);
+
+  const longPosts = paged.filter((n: NoteItem) => isLongForm(n));
+  const shortNotes = paged.filter((n: NoteItem) => !isLongForm(n));
 
   return (
     <div>
@@ -127,7 +142,7 @@ export default async function NotesPage({
                   (selectedTag: string) => selectedTag.toLowerCase() !== tl,
                 )
               : [...selectedTags, t];
-            const href = buildNotesHref(q, nextTags);
+            const href = buildNotesHref(q, nextTags, 1);
             return (
               <Link
                 key={t}
@@ -196,6 +211,32 @@ export default async function NotesPage({
           )}
         </div>
       </section>
+
+      {totalPages > 1 && (
+        <div className="mt-10 flex items-center justify-between">
+          <p className="cp-kicker">
+            Page {page} / {totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            {page > 1 && (
+              <Link
+                href={buildNotesHref(q, selectedTags, page - 1) as Route}
+                className="cp-btn-ghost px-3 py-2"
+              >
+                Previous
+              </Link>
+            )}
+            {page < totalPages && (
+              <Link
+                href={buildNotesHref(q, selectedTags, page + 1) as Route}
+                className="cp-btn-ghost px-3 py-2"
+              >
+                Next
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

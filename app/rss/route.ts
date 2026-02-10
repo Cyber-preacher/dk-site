@@ -1,13 +1,13 @@
 // app/rss/route.ts
-import { getAllNotes, isLongForm } from "@/lib/notes";
+import { getLongFormNoteSummaries } from "@/lib/notes";
 import { getSiteUrl } from "@/lib/site";
 
 export const dynamic = "force-static";
 
-type NoteItem = ReturnType<typeof getAllNotes>[number];
+type NoteItem = ReturnType<typeof getLongFormNoteSummaries>[number];
 
 export async function GET() {
-  const notes = getAllNotes().filter(isLongForm).slice(0, 50);
+  const notes = getLongFormNoteSummaries().slice(0, 50);
   const site = getSiteUrl();
 
   const items = notes
