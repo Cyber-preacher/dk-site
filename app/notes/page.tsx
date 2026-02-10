@@ -1,8 +1,8 @@
 // app/notes/page.tsx
 import Link from "next/link";
 import NoteCard from "@/components/NoteCard";
-import { getAllNotes } from "@/lib/notes";
-import type { Metadata } from "next";
+import { getAllNotes, isLongForm } from "@/lib/notes";
+import type { Metadata, Route } from "next";
 
 export const metadata: Metadata = { title: "Notes — Zettelkasten" };
 
@@ -12,6 +12,28 @@ type SearchParams = {
   tag?: string | string[];
 };
 
+function toTagList(raw: string | string[] | undefined): string[] {
+  const values = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const out: string[] = [];
+
+  for (const value of values) {
+    for (const part of value.split(",")) {
+      const tag = part.trim();
+      if (tag) out.push(tag);
+    }
+  }
+
+  return [...new Set(out)];
+}
+
+function buildNotesHref(q: string, tags: string[]): string {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  for (const tag of tags) params.append("tag", tag);
+  const qs = params.toString();
+  return qs ? `/notes?${qs}` : "/notes";
+}
+
 export default async function NotesPage({
   // Next 15: searchParams is async — must be awaited
   searchParams,
@@ -20,9 +42,10 @@ export default async function NotesPage({
 }) {
   const sp = (await searchParams) ?? {};
   const qRaw = (sp.q ?? "") as string | string[];
-  const tagRaw = (sp.tag ?? "") as string | string[];
+  const tagRaw = sp.tag as string | string[] | undefined;
   const q = (Array.isArray(qRaw) ? qRaw[0] : qRaw).trim();
-  const tag = (Array.isArray(tagRaw) ? tagRaw[0] : tagRaw).trim();
+  const selectedTags = toTagList(tagRaw);
+  const selectedTagsLower = selectedTags.map((t) => t.toLowerCase());
 
   const notes = getAllNotes();
 
@@ -33,12 +56,11 @@ export default async function NotesPage({
       tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
     }
   }
-  const tagsSorted: Array<[string, number]> = Array.from(tagCounts.entries()).sort(
-    (a: [string, number], b: [string, number]) => b[1] - a[1]
-  );
+  const tagsSorted: Array<[string, number]> = Array.from(
+    tagCounts.entries(),
+  ).sort((a: [string, number], b: [string, number]) => b[1] - a[1]);
 
   const ql = q.toLowerCase();
-  const tl = tag.toLowerCase();
 
   const filtered: NoteItem[] = notes.filter((n: NoteItem) => {
     const matchesQ =
@@ -48,40 +70,47 @@ export default async function NotesPage({
       n.content.toLowerCase().includes(ql);
 
     const matchesTag =
-      !tl || (n.tags || []).some((t: string) => t.toLowerCase() === tl);
+      selectedTagsLower.length === 0 ||
+      selectedTagsLower.every((selectedTag: string) =>
+        (n.tags || []).some((t: string) => t.toLowerCase() === selectedTag),
+      );
 
     return matchesQ && matchesTag;
   });
+  const longPosts = filtered.filter((n: NoteItem) => isLongForm(n));
+  const shortNotes = filtered.filter((n: NoteItem) => !isLongForm(n));
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold">Notes</h1>
-      <p className="mt-2 text-sm text-zinc-400">
-        Zettelkasten-style atomic ideas with backlinks.
-      </p>
+      <h1 className="text-5xl leading-none">Notes</h1>
 
       {/* Search form (GET) */}
-      <form method="get" action="/notes" className="mt-6 flex items-center gap-3">
+      <form
+        method="get"
+        action="/notes"
+        className="cp-panel mt-6 flex flex-wrap items-center gap-3 p-4"
+      >
         <input
           type="text"
           name="q"
           defaultValue={q}
           placeholder="Search title, excerpt, body…"
-          className="w-full md:w-96 rounded-lg bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-400/40"
+          className="cp-input w-full px-3 py-2 md:w-96"
         />
-        {/* preserve tag when searching */}
-        {tag && <input type="hidden" name="tag" value={tag} />}
-        <button
-          type="submit"
-          className="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/10 transition"
-        >
+        {/* preserve selected tags when searching */}
+        {selectedTags.map((selectedTag: string) => (
+          <input
+            key={selectedTag}
+            type="hidden"
+            name="tag"
+            value={selectedTag}
+          />
+        ))}
+        <button type="submit" className="cp-btn px-3 py-2">
           Search
         </button>
-        {(q || tag) && (
-          <Link
-            href="/notes"
-            className="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/10 transition"
-          >
+        {(q || selectedTags.length > 0) && (
+          <Link href="/notes" className="cp-btn-ghost px-3 py-2">
             Clear
           </Link>
         )}
@@ -91,19 +120,19 @@ export default async function NotesPage({
       {tagsSorted.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {tagsSorted.map(([t, count]: [string, number]) => {
-            const active = tag && t.toLowerCase() === tl;
-            const href = active
-              ? { pathname: "/notes" as const, query: q ? { q } : undefined }
-              : { pathname: "/notes" as const, query: q ? { q, tag: t } : { tag: t } };
+            const tl = t.toLowerCase();
+            const active = selectedTagsLower.includes(tl);
+            const nextTags = active
+              ? selectedTags.filter(
+                  (selectedTag: string) => selectedTag.toLowerCase() !== tl,
+                )
+              : [...selectedTags, t];
+            const href = buildNotesHref(q, nextTags);
             return (
               <Link
                 key={t}
-                href={href}
-                className={`text-[11px] font-mono tracking-widest px-2 py-1 rounded border ${
-                  active
-                    ? "border-cyan-400/60 bg-cyan-400/10"
-                    : "border-white/10 hover:bg-white/5"
-                }`}
+                href={href as Route}
+                className={`${active ? "cp-chip-active" : "cp-chip"} px-3 py-1`}
               >
                 #{t} <span className="opacity-60">({count})</span>
               </Link>
@@ -112,27 +141,61 @@ export default async function NotesPage({
         </div>
       )}
 
-      {/* Results */}
-      <div className="mt-6 grid md:grid-cols-2 gap-4">
-        {filtered.map((n: NoteItem) => (
-          <NoteCard
-            key={n.slug}
-            note={{
-              slug: n.slug,
-              title: n.title,
-              date: n.date,
-              tags: n.tags,
-              readingTime: n.readingTime,
-              excerpt: n.excerpt,
-            }}
-          />
-        ))}
-        {filtered.length === 0 && (
-          <p className="text-sm text-zinc-400 col-span-full">
-            No notes found{q ? ` for “${q}”` : ""}{tag ? ` with tag #${tag}` : ""}.
-          </p>
-        )}
-      </div>
+      {/* Long posts */}
+      <section className="mt-8">
+        <p className="cp-kicker">Long Posts</p>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          {longPosts.map((n: NoteItem) => (
+            <NoteCard
+              key={n.slug}
+              note={{
+                slug: n.slug,
+                title: n.title,
+                date: n.date,
+                tags: n.tags,
+                readingTime: n.readingTime,
+                excerpt: n.excerpt,
+                type: n.type,
+                hasPage: n.hasPage,
+              }}
+            />
+          ))}
+          {longPosts.length === 0 && (
+            <p className="cp-subtitle col-span-full text-sm">
+              No long posts matched this filter. Mark a note with{" "}
+              <code>type: "article"</code> or <code>type: "essay"</code> to
+              enable a dedicated page.
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* Short notes */}
+      <section className="mt-10">
+        <p className="cp-kicker">Short Notes</p>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          {shortNotes.map((n: NoteItem) => (
+            <NoteCard
+              key={n.slug}
+              note={{
+                slug: n.slug,
+                title: n.title,
+                date: n.date,
+                tags: n.tags,
+                readingTime: n.readingTime,
+                excerpt: n.excerpt,
+                type: n.type,
+                hasPage: n.hasPage,
+              }}
+            />
+          ))}
+          {shortNotes.length === 0 && (
+            <p className="cp-subtitle col-span-full text-sm">
+              No short notes matched this filter.
+            </p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

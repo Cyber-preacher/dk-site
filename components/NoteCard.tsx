@@ -7,27 +7,28 @@ export interface NoteMeta {
   tags?: string[];
   readingTime?: string;
   excerpt?: string;
+  type: "note" | "article" | "essay";
+  hasPage: boolean;
 }
 
 export default function NoteCard({ note }: { note: NoteMeta }) {
-  return (
-    <article className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:shadow-[0_0_40px_rgba(34,211,238,0.35)] transition-shadow">
-      <h3 className="text-lg font-semibold">
-        {/* Pass a concrete string, not a UrlObject */}
-        <Link href={`/notes/${note.slug}` as `/notes/${string}`}>{note.title}</Link>
-      </h3>
-      <div className="mt-1 text-xs text-zinc-400">
-        {note.date && <span>{note.date}</span>}
-        {note.readingTime && <span className="ml-2">• {note.readingTime}</span>}
+  const body = (
+    <article className="cp-card h-full p-5">
+      <h3 className="text-2xl leading-none">{note.title}</h3>
+      <div className="cp-kicker mt-2">
+        <span>{note.type}</span>
+        {note.date && <span className="ml-2">/ {note.date}</span>}
+        {note.hasPage && note.readingTime && (
+          <span className="ml-2">/ {note.readingTime}</span>
+        )}
       </div>
-      {note.excerpt && <p className="mt-3 text-sm text-zinc-300">{note.excerpt}</p>}
+      {note.excerpt && (
+        <p className="cp-subtitle mt-3 text-sm">{note.excerpt}</p>
+      )}
       {note.tags && note.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {note.tags.map((t) => (
-            <span
-              key={t}
-              className="text-[10px] tracking-widest font-mono px-2 py-1 rounded border border-white/10 text-zinc-300"
-            >
+            <span key={t} className="cp-chip px-2 py-1">
               #{t}
             </span>
           ))}
@@ -35,4 +36,17 @@ export default function NoteCard({ note }: { note: NoteMeta }) {
       )}
     </article>
   );
+
+  if (note.hasPage) {
+    return (
+      <Link
+        href={`/notes/${note.slug}` as `/notes/${string}`}
+        className="block"
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return body;
 }

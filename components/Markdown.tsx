@@ -25,36 +25,37 @@ type CodeRendererProps = {
 
 export default function Markdown({ source }: MarkdownProps) {
   return (
-    <ReactMarkdown
-      className="prose prose-invert"
-      // remark (Markdown → mdast)
-      remarkPlugins={[remarkGfm, remarkCallouts]}
-      // rehype (mdast → hast → html)
-      rehypePlugins={[
-        rehypeSlug,
-        [rehypeAutolinkHeadings, { behavior: "wrap" }],
-        [rehypeHighlight, { ignoreMissing: true }],
-      ]}
-      components={{
-        code({ inline, className, children, ...props }: CodeRendererProps) {
-          if (inline) {
+    <div className="prose">
+      <ReactMarkdown
+        // remark (Markdown → mdast)
+        remarkPlugins={[remarkGfm, remarkCallouts]}
+        // rehype (mdast → hast → html)
+        rehypePlugins={[
+          rehypeSlug,
+          [rehypeAutolinkHeadings, { behavior: "wrap" }],
+          [rehypeHighlight, { ignoreMissing: true }],
+        ]}
+        components={{
+          code({ inline, className, children, ...props }: CodeRendererProps) {
+            if (inline) {
+              return (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              );
+            }
             return (
-              <code className={className} {...props}>
-                {children}
-              </code>
+              <pre className="overflow-x-auto">
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              </pre>
             );
-          }
-          return (
-            <pre className="overflow-x-auto rounded-xl border border-white/10 bg-black/40">
-              <code className={className} {...props}>
-                {children}
-              </code>
-            </pre>
-          );
-        },
-      }}
-    >
-      {source}
-    </ReactMarkdown>
+          },
+        }}
+      >
+        {source}
+      </ReactMarkdown>
+    </div>
   );
 }

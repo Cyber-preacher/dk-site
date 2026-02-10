@@ -23,3 +23,6 @@ coverage
 .env*
 .DS_Store
 .env.local
+
+# Local planning docs (not committed)
+docs/

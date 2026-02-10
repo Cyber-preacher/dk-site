@@ -1,0 +1,35 @@
+name: Content Validation
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "content/notes/**"
+      - "scripts/validate-notes.mjs"
+      - "package.json"
+      - "yarn.lock"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Dependencies
+        run: yarn install --immutable
+
+      - name: Validate Notes
+        run: yarn validate:notes

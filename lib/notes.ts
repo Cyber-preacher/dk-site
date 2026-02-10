@@ -5,6 +5,8 @@ import matter from "gray-matter";
 import readingTime from "reading-time";
 import slugify from "slugify";
 
+export type NoteType = "note" | "article" | "essay";
+
 export interface Note {
   slug: string;
   title: string;
@@ -14,6 +16,8 @@ export interface Note {
   content: string;
   readingTime?: string;
   excerpt?: string;
+  type: NoteType;
+  hasPage: boolean;
   backlinks?: { slug: string; title: string }[];
 }
 
@@ -21,6 +25,24 @@ const NOTES_DIR = path.join(process.cwd(), "content", "notes");
 
 function toSlug(input: string) {
   return slugify(input, { lower: true, strict: true });
+}
+
+function normalizeType(raw: unknown, content: string): NoteType {
+  if (typeof raw === "string") {
+    const value = raw.trim().toLowerCase();
+    if (value === "essay") return "essay";
+    if (value === "article" || value === "post" || value === "long")
+      return "article";
+    if (value === "note" || value === "idea" || value === "short")
+      return "note";
+  }
+
+  const words = content.split(/\s+/).filter(Boolean).length;
+  return words >= 280 ? "article" : "note";
+}
+
+export function isLongForm(note: Pick<Note, "type">): boolean {
+  return note.type === "article" || note.type === "essay";
 }
 
 function extractWikiLinks(md: string): string[] {
@@ -69,6 +91,7 @@ export function getAllNotes(): Note[] {
     const excerpt =
       (data.excerpt as string | undefined) ||
       content.split("\n").filter(Boolean).slice(0, 3).join(" ");
+    const type = normalizeType(data.type, content);
 
     return {
       slug,
@@ -79,6 +102,8 @@ export function getAllNotes(): Note[] {
       content,
       readingTime: rt,
       excerpt,
+      type,
+      hasPage: isLongForm({ type }),
     };
   });
 
@@ -87,8 +112,9 @@ export function getAllNotes(): Note[] {
   for (const n of raw) titleToSlug[n.title.toLowerCase()] = n.slug;
 
   for (const n of raw) {
-    n.links = (n.links || [])
-      .map((l) => titleToSlug[l.toLowerCase?.() ?? l] || toSlug(l));
+    n.links = (n.links || []).map(
+      (l) => titleToSlug[l.toLowerCase?.() ?? l] || toSlug(l),
+    );
   }
 
   // Build backlinks

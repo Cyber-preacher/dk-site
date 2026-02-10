@@ -10,16 +10,17 @@ export default function ThemeToggle() {
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
+  const isDark = theme === "dark";
   const next = theme === "dark" ? "light" : "dark";
 
   return (
     <button
       aria-label="Toggle theme"
       onClick={() => setTheme(next)}
-      className="rounded-xl border border-white/10 bg-white/5 px-3 py-1 text-sm hover:bg-white/10 transition"
+      className="cp-btn-ghost px-3 py-1.5"
       title={`Switch to ${next} mode`}
     >
-      {theme === "dark" ? "☀️" : "🌙"}
+      {isDark ? "Light Mode" : "Dark Mode"}
     </button>
   );
 }

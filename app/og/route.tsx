@@ -1,37 +1,58 @@
-import { getAllNotes, type Note } from "@/lib/notes";
+import { ImageResponse } from "next/og";
+
+export const runtime = "nodejs";
 
 export async function GET() {
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://example.com";
-
-  const notes = getAllNotes();
-
-  const urls: Array<{ loc: string; priority: number; lastmod?: string }> = [
-    { loc: `${site}/`, priority: 1.0 },
-    { loc: `${site}/about`, priority: 0.8 },
-    { loc: `${site}/notes`, priority: 0.9 },
-    ...notes.map((n: Note) => ({
-      loc: `${site}/notes/${n.slug}`,
-      priority: 0.9,
-      lastmod: n.date || undefined,
-    })),
-  ];
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls
-  .map(
-    (u) => `
-  <url>
-    <loc>${u.loc}</loc>
-    ${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}
-    <priority>${u.priority}</priority>
-  </url>`
-  )
-  .join("\n")}
-</urlset>`;
-
-  return new Response(xml, {
-    status: 200,
-    headers: { "Content-Type": "application/xml; charset=utf-8" },
-  });
+  return new ImageResponse(
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        background:
+          "linear-gradient(140deg,#09090b 0%, #251307 52%, #0a1016 100%)",
+        padding: 64,
+        position: "relative",
+        fontFamily: "Rajdhani, sans-serif",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: 32,
+          borderRadius: 24,
+          border: "2px solid rgba(255,132,41,.56)",
+          boxShadow: "inset 0 0 90px rgba(205,87,11,.34)",
+        }}
+      />
+      <div
+        style={{
+          fontSize: 26,
+          letterSpacing: 6,
+          color: "rgba(255,210,176,.84)",
+        }}
+      >
+        DATONET // ARASAKA DISTRICT
+      </div>
+      <div
+        style={{
+          marginTop: 16,
+          fontSize: 76,
+          fontWeight: 700,
+          color: "#fff4ef",
+          lineHeight: 1,
+        }}
+      >
+        Dato Kavazi
+      </div>
+      <div
+        style={{ marginTop: 20, fontSize: 28, color: "rgba(177,224,255,0.88)" }}
+      >
+        Notes, essays, ideas, and systems thinking
+      </div>
+    </div>,
+    { width: 1200, height: 630 },
+  );
 }

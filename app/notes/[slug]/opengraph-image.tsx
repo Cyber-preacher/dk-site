@@ -1,6 +1,6 @@
 // app/notes/[slug]/opengraph-image.tsx
 import { ImageResponse } from "next/og";
-import { getNoteBySlug } from "@/lib/notes";
+import { getNoteBySlug, isLongForm } from "@/lib/notes";
 
 // We use fs/reading-time inside lib/notes, so use Node runtime.
 export const runtime = "nodejs";
@@ -18,44 +18,64 @@ export default async function OG({
   const { slug } = await params;
 
   const note = getNoteBySlug(slug);
-  const title: string = note?.title ?? "Note not found";
-  const date: string = note?.date ?? "";
-  const tags: string[] = note?.tags ?? [];
+  if (!note || !isLongForm(note)) {
+    return new Response("Not found", { status: 404 });
+  }
+  const title: string = note.title;
+  const date: string = note.date ?? "";
+  const tags: string[] = note.tags ?? [];
 
   return new ImageResponse(
-    (
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        background:
+          "linear-gradient(140deg,#09090b 0%, #251307 52%, #0a1016 100%)",
+        padding: 64,
+        position: "relative",
+        fontFamily: "Rajdhani, sans-serif",
+      }}
+    >
       <div
         style={{
-          height: "100%",
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          background:
-            "linear-gradient(135deg,#0b0f1a 0%, #0c1f2e 60%, #0b0f1a 100%)",
-          padding: 64,
-          position: "relative",
-          fontFamily: "Inter, ui-sans-serif, system-ui",
+          position: "absolute",
+          inset: 32,
+          borderRadius: 24,
+          border: "2px solid rgba(255,132,41,.56)",
+          boxShadow: "inset 0 0 90px rgba(205,87,11,.34)",
+        }}
+      />
+      <div
+        style={{
+          fontSize: 24,
+          letterSpacing: 6,
+          color: "rgba(255,210,176,.84)",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: 32,
-            borderRadius: 24,
-            boxShadow:
-              "0 0 0 2px rgba(34,211,238,.5), inset 0 0 80px rgba(236,72,153,.35)",
-          }}
-        />
-        <div style={{ fontSize: 48, fontWeight: 800, color: "white", lineHeight: 1.2 }}>
-          {title}
-        </div>
-        <div style={{ marginTop: 16, fontSize: 24, color: "rgba(255,255,255,0.75)" }}>
-          {date}
-          {tags.length ? ` · ${tags.map((t: string) => `#${t}`).join(" ")}` : ""}
-        </div>
+        ARASAKA MEMO // NOTE
       </div>
-    ),
-    size
+      <div
+        style={{
+          marginTop: 14,
+          fontSize: 52,
+          fontWeight: 700,
+          color: "#fff4ef",
+          lineHeight: 1.2,
+        }}
+      >
+        {title}
+      </div>
+      <div
+        style={{ marginTop: 16, fontSize: 24, color: "rgba(177,224,255,0.88)" }}
+      >
+        {date}
+        {tags.length ? ` · ${tags.map((t: string) => `#${t}`).join(" ")}` : ""}
+      </div>
+    </div>,
+    size,
   );
 }

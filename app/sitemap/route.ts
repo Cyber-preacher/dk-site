@@ -1,14 +1,14 @@
 // app/sitemap/route.ts
-import { getAllNotes, type Note } from "@/lib/notes";
+import { getAllNotes, isLongForm, type Note } from "@/lib/notes";
+import { getSiteUrl } from "@/lib/site";
 
 export async function GET() {
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://example.com";
+  const site = getSiteUrl();
 
-  const notes = getAllNotes();
+  const notes = getAllNotes().filter((n: Note) => isLongForm(n));
 
   const urls: Array<{ loc: string; priority: number; lastmod?: string }> = [
     { loc: `${site}/`, priority: 1.0 },
-    { loc: `${site}/about`, priority: 0.8 },
     { loc: `${site}/notes`, priority: 0.9 },
     ...notes.map((n: Note) => ({
       loc: `${site}/notes/${n.slug}`,
@@ -26,7 +26,7 @@ ${urls
     <loc>${u.loc}</loc>
     ${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}
     <priority>${u.priority}</priority>
-  </url>`
+  </url>`,
   )
   .join("\n")}
 </urlset>`;
