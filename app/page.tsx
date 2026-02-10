@@ -28,9 +28,7 @@ export default function HomePage() {
   return (
     <div>
       <section className="cp-panel p-6 sm:p-8">
-        <p className="cp-kicker">Profile</p>
-        <h1 className="mt-2 text-6xl leading-none sm:text-7xl">Dato Kavazi</h1>
-        <p className="cp-subtitle mt-4 text-base sm:text-lg">
+        <p className="cp-subtitle text-base sm:text-lg">
           I&apos;m Dato Kavazi - an entrepreneur and systems-builder working at
           the intersection of decentralized networks, neurotech and planetary
           governance.
