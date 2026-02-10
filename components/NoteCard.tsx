@@ -12,6 +12,9 @@ export interface NoteMeta {
 }
 
 export default function NoteCard({ note }: { note: NoteMeta }) {
+  const tags = [...new Set((note.tags || []).map((t) => t.trim().toLowerCase()))]
+    .filter(Boolean);
+
   const body = (
     <article className="cp-card h-full p-5">
       <h3 className="text-2xl leading-none">{note.title}</h3>
@@ -25,9 +28,9 @@ export default function NoteCard({ note }: { note: NoteMeta }) {
       {note.excerpt && (
         <p className="cp-subtitle mt-3 text-sm">{note.excerpt}</p>
       )}
-      {note.tags && note.tags.length > 0 && (
+      {tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
-          {note.tags.map((t) => (
+          {tags.map((t) => (
             <span key={t} className="cp-chip px-2 py-1">
               #{t}
             </span>

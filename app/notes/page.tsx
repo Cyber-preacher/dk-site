@@ -15,13 +15,17 @@ type SearchParams = {
   page?: string | string[];
 };
 
+function normalizeTag(tag: string): string {
+  return tag.trim().toLowerCase();
+}
+
 function toTagList(raw: string | string[] | undefined): string[] {
   const values = Array.isArray(raw) ? raw : raw ? [raw] : [];
   const out: string[] = [];
 
   for (const value of values) {
     for (const part of value.split(",")) {
-      const tag = part.trim();
+      const tag = normalizeTag(part);
       if (tag) out.push(tag);
     }
   }
@@ -61,7 +65,9 @@ export default async function NotesPage({
   // Tag counts
   const tagCounts = new Map<string, number>();
   for (const n of notes) {
-    for (const t of n.tags || []) {
+    const uniqueTags = new Set((n.tags || []).map((t) => normalizeTag(t)));
+    for (const t of uniqueTags) {
+      if (!t) continue;
       tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
     }
   }
@@ -81,7 +87,7 @@ export default async function NotesPage({
     const matchesTag =
       selectedTagsLower.length === 0 ||
       selectedTagsLower.every((selectedTag: string) =>
-        (n.tags || []).some((t: string) => t.toLowerCase() === selectedTag),
+        (n.tags || []).some((t: string) => normalizeTag(t) === selectedTag),
       );
 
     return matchesQ && matchesTag;
