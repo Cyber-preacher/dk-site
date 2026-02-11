@@ -59,16 +59,13 @@ export default function HomePage() {
             <h2 className="text-3xl leading-none">Interests</h2>
             <p className="mt-3 text-sm sm:text-base">
               What I study: cybernetics, computer sciences, neurosciences,
-              robotics, astronomy, physics, philosophy, and adjacent systems
-              disciplines.
+              robotics, astronomy, physics, philosophy, strategy and military,
+              and adjacent systems disciplines.
             </p>
             <p className="mt-2 text-sm sm:text-base">
               Creative work: writing (books, short stories, film/series
               scripts), painting, and music. I play multiple styles of guitar,
               piano, some drums, and completed formal vocal training.
-            </p>
-            <p className="mt-2 text-sm sm:text-base">
-              Strategy and military.
             </p>
             <p className="mt-2 text-sm sm:text-base">
               Sports: fitness, MMA, archery, historical fencing.
