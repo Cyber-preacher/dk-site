@@ -68,6 +68,9 @@ export default function HomePage() {
               piano, some drums, and completed formal vocal training.
             </p>
             <p className="mt-2 text-sm sm:text-base">
+              Strategy and military.
+            </p>
+            <p className="mt-2 text-sm sm:text-base">
               Sports: fitness, MMA, archery, historical fencing.
             </p>
           </div>
