@@ -21,7 +21,7 @@ export default function NoteCard({ note }: { note: NoteMeta }) {
       <div className="cp-kicker mt-2">
         <span>{note.type}</span>
         {note.date && <span className="ml-2">/ {note.date}</span>}
-        {note.hasPage && note.readingTime && (
+        {note.type !== "note" && note.readingTime && (
           <span className="ml-2">/ {note.readingTime}</span>
         )}
       </div>
@@ -40,16 +40,9 @@ export default function NoteCard({ note }: { note: NoteMeta }) {
     </article>
   );
 
-  if (note.hasPage) {
-    return (
-      <Link
-        href={`/notes/${note.slug}` as `/notes/${string}`}
-        className="block"
-      >
-        {body}
-      </Link>
-    );
-  }
-
-  return body;
+  return (
+    <Link href={`/notes/${note.slug}` as `/notes/${string}`} className="block">
+      {body}
+    </Link>
+  );
 }

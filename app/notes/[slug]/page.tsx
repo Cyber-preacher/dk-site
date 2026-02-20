@@ -3,16 +3,15 @@ import type { Metadata, Route } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
-  getLongFormNoteSummaries,
+  getAllNoteSummaries,
   getNoteBySlug,
   getNoteSummaryBySlug,
   getSlugMap,
-  isLongForm,
 } from "@/lib/notes";
 import Markdown from "@/components/Markdown";
 
 export function generateStaticParams(): { slug: string }[] {
-  return getLongFormNoteSummaries().map((n) => ({ slug: n.slug }));
+  return getAllNoteSummaries().map((n) => ({ slug: n.slug }));
 }
 
 export async function generateMetadata({
@@ -22,7 +21,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const note = getNoteBySlug(slug);
-  if (!note || !isLongForm(note)) return { title: "Note not found" };
+  if (!note) return { title: "Note not found" };
 
   return {
     title: `${note.title} — Notes`,
@@ -44,13 +43,13 @@ export default async function NotePage({
 }) {
   const { slug } = await params;
   const note = getNoteBySlug(slug);
-  if (!note || !isLongForm(note)) return notFound();
+  if (!note) return notFound();
 
   const slugMap = getSlugMap();
   const backlinks = (note.backlinks || []).filter(
     (b: { slug: string; title: string }) => {
       const source = getNoteSummaryBySlug(b.slug);
-      return !!source && isLongForm(source);
+      return !!source;
     },
   );
 
