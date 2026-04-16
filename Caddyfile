@@ -7,6 +7,14 @@
 	@www host www.{$DOMAIN}
 	redir @www https://{$DOMAIN}{uri} permanent
 
+	@unsafe_methods {
+		not method GET HEAD OPTIONS
+	}
+	respond @unsafe_methods "Method not allowed" 405
+
+	@next_action header Next-Action *
+	respond @next_action "Not found" 404
+
 	encode zstd gzip
 
 	header {

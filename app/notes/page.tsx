@@ -143,16 +143,13 @@ export default async function NotesPage({
           {tagsSorted.map(([t, count]: [string, number]) => {
             const tl = t.toLowerCase();
             const active = selectedTagsLower.includes(tl);
-            const nextTags = active
-              ? selectedTags.filter(
-                  (selectedTag: string) => selectedTag.toLowerCase() !== tl,
-                )
-              : [...selectedTags, t];
+            const nextTags = active ? [] : [t];
             const href = buildNotesHref(q, nextTags, 1);
             return (
               <Link
                 key={t}
                 href={href as Route}
+                rel="nofollow"
                 className={`${active ? "cp-chip-active" : "cp-chip"} px-3 py-1`}
               >
                 #{t} <span className="opacity-60">({count})</span>
